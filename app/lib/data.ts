@@ -155,48 +155,51 @@ export async function fetchInvoicesPages(query: string) {
 	}
 }
 
-// export async function fetchInvoiceById(id: string) {
-// 	try {
-// 		const data = await sql<InvoiceForm>`
-//       SELECT
-//         invoices.id,
-//         invoices.customer_id,
-//         invoices.amount,
-//         invoices.status
-//       FROM invoices
-//       WHERE invoices.id = ${id};
-//     `;
+export async function fetchInvoiceById(id: string) {
+	try {
+		const db = await openDb();
 
-// 		const invoice = data.rows.map((invoice) => ({
-// 			...invoice,
-// 			// Convert amount from cents to dollars
-// 			amount: invoice.amount / 100,
-// 		}));
+		const data = await db.all<InvoiceForm[]>(`
+			SELECT
+			invoices.id,
+			invoices.customer_id,
+			invoices.amount,
+			invoices.status
+			FROM invoices
+			WHERE invoices.id = ${id};
+    `);
 
-// 		return invoice[0];
-// 	} catch (error) {
-// 		console.error("Database Error:", error);
-// 		throw new Error("Failed to fetch invoice.");
-// 	}
-// }
+		const invoice = data.map((invoice) => ({
+			...invoice,
+			// Convert amount from cents to dollars
+			amount: invoice.amount / 100,
+		}));
 
-// export async function fetchCustomers() {
-// 	try {
-// 		const data = await sql<CustomerField>`
-//       SELECT
-//         id,
-//         name
-//       FROM customers
-//       ORDER BY name ASC
-//     `;
+		return invoice[0];
+	} catch (error) {
+		console.error("Database Error:", error);
+		throw new Error("Failed to fetch invoice.");
+	}
+}
 
-// 		const customers = data.rows;
-// 		return customers;
-// 	} catch (err) {
-// 		console.error("Database Error:", err);
-// 		throw new Error("Failed to fetch all customers.");
-// 	}
-// }
+export async function fetchCustomers() {
+	try {
+		const db = await openDb();
+
+		const data = await db.all<CustomerField[]>(`
+      SELECT
+        id,
+        name
+      FROM customers
+      ORDER BY name ASC
+    `);
+
+		return data;
+	} catch (err) {
+		console.error("Database Error:", err);
+		throw new Error("Failed to fetch all customers.");
+	}
+}
 
 // export async function fetchFilteredCustomers(query: string) {
 // 	try {
