@@ -92,64 +92,68 @@ export async function fetchCardData() {
 	}
 }
 
-// const ITEMS_PER_PAGE = 6;
-// export async function fetchFilteredInvoices(
-// 	query: string,
-// 	currentPage: number
-// ) {
-// 	const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+const ITEMS_PER_PAGE = 6;
+export async function fetchFilteredInvoices(
+	query: string,
+	currentPage: number
+) {
+	const offset = (currentPage - 1) * ITEMS_PER_PAGE;
 
-// 	try {
-// 		const invoices = await sql<InvoicesTable>`
-//       SELECT
-//         invoices.id,
-//         invoices.amount,
-//         invoices.date,
-//         invoices.status,
-//         customers.name,
-//         customers.email,
-//         customers.image_url
-//       FROM invoices
-//       JOIN customers ON invoices.customer_id = customers.id
-//       WHERE
-//         customers.name ILIKE ${`%${query}%`} OR
-//         customers.email ILIKE ${`%${query}%`} OR
-//         invoices.amount::text ILIKE ${`%${query}%`} OR
-//         invoices.date::text ILIKE ${`%${query}%`} OR
-//         invoices.status ILIKE ${`%${query}%`}
-//       ORDER BY invoices.date DESC
-//       LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
-//     `;
+	try {
+		const db = await openDb();
+		query = query.toLowerCase();
 
-// 		return invoices.rows;
-// 	} catch (error) {
-// 		console.error("Database Error:", error);
-// 		throw new Error("Failed to fetch invoices.");
-// 	}
-// }
+		const invoices = await db.all<InvoicesTable[]>(`
+      SELECT
+        invoices.id,
+        invoices.amount,
+        invoices.date,
+        invoices.status,
+        customers.name,
+        customers.email,
+        customers.image_url
+      FROM invoices
+      JOIN customers ON invoices.customer_id = customers.id
+      WHERE
+        LOWER(customers.name) GLOB ${`'*${query}*'`} OR
+        LOWER(customers.email) GLOB ${`'*${query}*'`} OR
+        LOWER(invoices.amount) GLOB ${`'*${query}*'`} OR
+        LOWER(invoices.date) GLOB ${`'*${query}*'`} OR
+        LOWER(invoices.status) GLOB ${`'*${query}*'`}
+      ORDER BY invoices.date DESC
+      LIMIT ${ITEMS_PER_PAGE} OFFSET ${offset}
+    `);
 
-// export async function fetchInvoicesPages(query: string) {
-// 	try {
-// 		const count = await sql`SELECT COUNT(*)
-//     FROM invoices
-//     JOIN customers ON invoices.customer_id = customers.id
-//     WHERE
-//       customers.name ILIKE ${`%${query}%`} OR
-//       customers.email ILIKE ${`%${query}%`} OR
-//       invoices.amount::text ILIKE ${`%${query}%`} OR
-//       invoices.date::text ILIKE ${`%${query}%`} OR
-//       invoices.status ILIKE ${`%${query}%`}
-//   `;
+		return invoices;
+	} catch (error) {
+		console.error("Database Error:", error);
+		throw new Error("Failed to fetch invoices.");
+	}
+}
 
-// 		const totalPages = Math.ceil(
-// 			Number(count.rows[0].count) / ITEMS_PER_PAGE
-// 		);
-// 		return totalPages;
-// 	} catch (error) {
-// 		console.error("Database Error:", error);
-// 		throw new Error("Failed to fetch total number of invoices.");
-// 	}
-// }
+export async function fetchInvoicesPages(query: string) {
+	try {
+		const db = await openDb();
+		query = query.toLowerCase();
+
+		const count = await db.get(`SELECT COUNT(*) AS count
+			FROM invoices
+			JOIN customers ON invoices.customer_id = customers.id
+			WHERE
+				customers.name GLOB ${`'*${query}*'`} OR
+				customers.email GLOB ${`'*${query}*'`} OR
+				invoices.amount GLOB ${`'*${query}*'`} OR
+				invoices.date GLOB ${`'*${query}*'`} OR
+				invoices.status GLOB ${`'*${query}*'`}
+		`);
+
+		const totalPages = Math.ceil(Number(count.count) / ITEMS_PER_PAGE);
+		return totalPages;
+	} catch (error) {
+		console.error("Database Error:", error);
+		throw new Error("Failed to fetch total number of invoices.");
+	}
+}
 
 // export async function fetchInvoiceById(id: string) {
 // 	try {
