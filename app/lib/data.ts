@@ -1,7 +1,6 @@
 import { openDb } from "../database/db";
 import {
 	CustomerField,
-	CustomersTableType,
 	InvoiceForm,
 	InvoicesTable,
 	LatestInvoiceRaw,
